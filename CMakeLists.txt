@@ -13,3 +13,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 add_executable(SerialTerminal
     src/main.cpp
 )
+
+add_custom_target(run
+    COMMAND ${CMAKE_SOURCE_DIR}/bin/SerialTerminal
+    DEPENDS ${CMAKE_SOURCE_DIR}/bin/SerialTerminal
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+)
