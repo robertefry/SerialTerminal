@@ -12,7 +12,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(SerialTerminal
     src/main.cpp
+    src/serial/SerialPorts.cpp
 )
+
+target_link_libraries(SerialTerminal serialport)
 
 add_custom_target(run
     COMMAND ${CMAKE_SOURCE_DIR}/bin/SerialTerminal
