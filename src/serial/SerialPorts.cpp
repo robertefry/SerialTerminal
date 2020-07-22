@@ -50,9 +50,152 @@ SerialPort& SerialPort::operator=(SerialPort&& other)
     return *this;
 }
 
+SerialPort::TransportType SerialPort::transport_type() const
+{
+    switch (sp_get_port_transport(m_SerialPort))
+    {
+        case SP_TRANSPORT_NATIVE:    return SerialPort::TRANSPORT_NATIVE;
+        case SP_TRANSPORT_USB:       return SerialPort::TRANSPORT_USB;
+        case SP_TRANSPORT_BLUETOOTH: return SerialPort::TRANSPORT_BLUETOOTH;
+        default: return SerialPort::TRANSPORT_UNKNOWN;
+    }
+}
+
 std::string SerialPort::name() const
 {
-    return sp_get_port_name(m_SerialPort);
+    try {
+        return sp_get_port_name(m_SerialPort);
+    } catch (const std::exception&) {
+        return "Failed to retrieve";
+    }
+}
+
+std::string SerialPort::description() const
+{
+    try {
+        return sp_get_port_description(m_SerialPort);
+    } catch (const std::exception&) {
+        return "Failed to retrieve";
+    }
+}
+
+std::string SerialPort::transport() const
+{
+    switch (transport_type())
+    {
+        case TRANSPORT_NATIVE:    return "Native";
+        case TRANSPORT_USB:       return "USB";
+        case TRANSPORT_BLUETOOTH: return "Bluetooth";
+        default: return "Unknown";
+    }
+}
+
+std::string SerialPort::manufacturer() const
+{
+    if (transport_type() == TRANSPORT_USB) {
+        try {
+            return sp_get_port_usb_manufacturer(m_SerialPort);
+        } catch (const std::exception&) {
+            return "Failed to retrieve";
+        }
+    }
+    return "Unknown";
+}
+
+std::string SerialPort::product() const
+{
+    if (transport_type() == TRANSPORT_USB) {
+        try {
+            return sp_get_port_usb_product(m_SerialPort);
+        } catch (const std::exception&) {
+            return "Failed to retrieve";
+        }
+    }
+    return "Unknown";
+}
+
+std::string SerialPort::serial() const
+{
+    if (transport_type() == TRANSPORT_USB) {
+        try {
+            return sp_get_port_usb_serial(m_SerialPort);
+        } catch (const std::exception&) {
+            return "Failed to retrieve";
+        }
+    }
+    return "Unknown";
+}
+
+std::string SerialPort::vendor_id() const
+{
+    if (transport_type() == TRANSPORT_USB) {
+        try {
+            int vid, pid;
+            sp_return r_get = sp_get_port_usb_vid_pid(m_SerialPort, &vid, &pid);
+            if (r_get != SP_OK) throw std::runtime_error("Failed to get serial device vendor id.");
+            return std::to_string(vid);
+        } catch (const std::exception&) {
+            return "Failed to retrieve";
+        }
+    }
+    return "Unknown";
+}
+
+std::string SerialPort::product_id() const
+{
+    if (transport_type() == TRANSPORT_USB) {
+        try {
+            int vid, pid;
+            sp_return r_get = sp_get_port_usb_vid_pid(m_SerialPort, &vid, &pid);
+            if (r_get != SP_OK) throw std::runtime_error("Failed to get serial device product id.");
+            return std::to_string(pid);
+        } catch (const std::exception&) {
+            return "Failed to retrieve";
+        }
+    }
+    return "Unknown";
+}
+
+std::string SerialPort::usb_bus() const
+{
+    if (transport_type() == TRANSPORT_USB) {
+        try {
+            int bus, adr;
+            sp_return r_get = sp_get_port_usb_bus_address(m_SerialPort, &bus, &adr);
+            if (r_get != SP_OK) throw std::runtime_error("Failed to get serial device product id.");
+            return std::to_string(bus);
+        } catch (const std::exception&) {
+            return "Failed to retrieve";
+        }
+    }
+    return "Unknown";
+}
+
+std::string SerialPort::usb_addr() const
+{
+    if (transport_type() == TRANSPORT_USB) {
+        try {
+            int bus, adr;
+            sp_return r_get = sp_get_port_usb_bus_address(m_SerialPort, &bus, &adr);
+            if (r_get != SP_OK) throw std::runtime_error("Failed to get serial device product id.");
+            return std::to_string(adr);
+        } catch (const std::exception&) {
+            return "Failed to retrieve";
+        }
+    }
+    return "Unknown";
+}
+
+std::string SerialPort::mac_addr() const
+{
+    if (transport_type() == TRANSPORT_BLUETOOTH) {
+        try {
+            return sp_get_port_bluetooth_address(m_SerialPort);
+        } catch (const std::exception&) {
+            return "Failed to retrieve";
+        }
+    }
+    return "Unknown";
 }
 /******************************************************************************/
 
@@ -83,5 +226,14 @@ SerialPorts::SerialPortList SerialPorts::ListAvailableSerialPorts()
 
     sp_free_port_list(port_list);
     return available_ports;
+}
+
+SerialPort SerialPorts::GetSerialPortByName(const std::string& name)
+{
+    sp_port* port;
+    sp_return r_getport = sp_get_port_by_name(name.c_str(), &port);
+    if (r_getport != SP_OK) throw std::runtime_error(
+        "Failed to get serial port by name. '" + name + "'");
+    return SerialPort{port};
 }
 /******************************************************************************/
